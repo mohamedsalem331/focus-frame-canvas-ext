@@ -4,90 +4,75 @@ import { useEffect, useState } from "react"
 
 import { useMessage } from "@plasmohq/messaging/hook"
 
-const QueryTextAnywhere = () => {
-  const [isCaptureBoxActive, setCaptureBoxActive] = useState<boolean>(true)
-  useMessage<string, string>(async (req, res) => {
-    console.log("FocusFrameCanvas - Plasmo Extension Loaded")
-
-    const body: any = req.body
-    setCaptureBoxActive(body.isActive)
-    console.log("ffff", body)
-
-    if (isCaptureBoxActive) {
-      const captureBoxExits = document.querySelector(".capture-box")
-
-      if (!captureBoxExits) {
-        new FocusFrameCanvasExtension(isCaptureBoxActive)
-      }
-    }
-  })
-
-  return <></>
-}
-
-export default QueryTextAnywhere
-
-// const ffsHandler = (isCaptureBoxActive: boolean) => {
-//   const focusFrameCanvasExtension = new FocusFrameCanvasExtension(isCaptureBoxActive)
-// }
-
 class FocusFrameCanvasExtension {
   private isMouseDown = false
   private mouseDownCoords = { x: 0, y: 0 }
   private overLayHeight: string
   private overlayElement: HTMLElement
-  private captureBoxElement: HTMLElement
+  captureBoxElement: HTMLElement
   private captureBoxElementButton: HTMLElement
+  private captureBoxElementCloseButton: HTMLElement
 
-  constructor(private readonly isCaptureBoxActive: boolean) {
+  // constructor(private readonly isCaptureBoxActive: boolean) {}
+
+  bootstrap() {
     this.overLayHeight = this.getMainArticleHeight()
     this.overlayElement = this.createOverlayElement()
     this.captureBoxElement = this.createCaptureBoxElement()
     this.captureBoxElementButton = this.createCaptureBoxButtonElement()
+    this.captureBoxElementCloseButton =
+      this.createCaptureBoxCloseButtonElement()
 
     document.body.appendChild(this.captureBoxElement)
+    this.captureBoxElement.appendChild(this.captureBoxElementCloseButton)
     this.captureBoxElement.appendChild(this.captureBoxElementButton)
 
-    // if (this.isCaptureBoxActive) {
-    //   this.captureBoxElement.style.display = "flex"
-    // } else {
-    //   this.captureBoxElement.style.display = "none"
-    // }
-
     this.captureBoxElementButton.addEventListener("click", () => {
-      if (this.isCaptureBoxActive) {
-        this.captureBoxElement.style.height = `${this.overLayHeight}`
-        this.applyClipPath()
-      }
+      console.log("this.overLayHeight", this.overLayHeight)
+      this.captureBoxElement.style.height = `${this.overLayHeight}`
+      this.applyClipPath()
     })
 
-    document.addEventListener("mousedown", (e) => {
-      if (this.isCaptureBoxActive) {
-        e.preventDefault()
-        this.isMouseDown = true
-        this.mouseDownCoords.x = e.pageX
-        this.mouseDownCoords.y = e.pageY
-      }
+    this.captureBoxElementCloseButton.addEventListener("click", () => {
+      this.unbootstrap()
     })
 
-    document.addEventListener("mouseup", (e) => {
-      if (this.isCaptureBoxActive) {
-        this.isMouseDown = false
-        document.body.appendChild(this.overlayElement)
-        this.applyClipPath()
-      }
-    })
+    document.addEventListener("mousedown", this.mousedownHandler)
+    document.addEventListener("mousemove", this.mousemoveHandler)
+    document.addEventListener("mouseup", this.mouseupHandler)
+  }
 
-    document.addEventListener("mousemove", (e) => {
-      if (this.isCaptureBoxActive) {
-        if (this.isMouseDown) {
-          this.calculateCaptureBoxSize(this.mouseDownCoords, {
-            x: e.pageX,
-            y: e.pageY
-          })
-        }
-      }
-    })
+  unbootstrap() {
+    this.isMouseDown = false
+    this.mouseDownCoords = { x: 0, y: 0 }
+    this.captureBoxElement.remove()
+    this.overlayElement.remove()
+
+    document.removeEventListener("mousedown", this.mousedownHandler)
+    document.removeEventListener("mousemove", this.mousemoveHandler)
+    document.removeEventListener("mouseup", this.mouseupHandler)
+  }
+
+  mouseupHandler = (e: any) => {
+    this.isMouseDown = false
+    document.body.appendChild(this.overlayElement)
+    this.applyClipPath()
+  }
+
+  mousedownHandler = (e: any) => {
+    e.preventDefault()
+    this.isMouseDown = true
+    this.mouseDownCoords.x = e.pageX
+    this.mouseDownCoords.y = e.pageY
+  }
+
+  mousemoveHandler = (e: any) => {
+    if (this.isMouseDown) {
+      this.calculateCaptureBoxSize(this.mouseDownCoords, {
+        x: e.pageX,
+        y: e.pageY
+      })
+    }
   }
 
   getMainArticleHeight = (): string => {
@@ -144,6 +129,25 @@ class FocusFrameCanvasExtension {
     return captureBoxElementButton
   }
 
+  createCaptureBoxCloseButtonElement = (): HTMLElement => {
+    const captureBoxElementButton: HTMLElement = document.createElement("div")
+    captureBoxElementButton.className = "capture-box-close-btn"
+    captureBoxElementButton.style.position = "absolute"
+    captureBoxElementButton.style.top = "0px"
+    captureBoxElementButton.style.width = "55px"
+    captureBoxElementButton.style.height = "25px"
+    captureBoxElementButton.style.backgroundColor = "#781e1e"
+    captureBoxElementButton.style.cursor = "pointer"
+    captureBoxElementButton.style.transform = "translateY(-50%)"
+    captureBoxElementButton.style.transition = "0.2s ease-in-out"
+    captureBoxElementButton.textContent = "Close"
+    captureBoxElementButton.style.fontSize = "15px"
+    captureBoxElementButton.style.color = "#fff"
+    captureBoxElementButton.style.textAlign = "center"
+
+    return captureBoxElementButton
+  }
+
   calculateCaptureBoxSize = (mouseDownCoords: any, mouseUpCoords: any) => {
     const width = Math.abs(mouseDownCoords.x - mouseUpCoords.x)
     const height = Math.abs(mouseDownCoords.y - mouseUpCoords.y)
@@ -172,3 +176,32 @@ class FocusFrameCanvasExtension {
     this.overlayElement.style.clipPath = clipPath
   }
 }
+
+const QueryTextAnywhere = () => {
+  const [isCaptureBoxActive, setCaptureBoxActive] = useState<boolean>(false)
+
+  useMessage<string, string>(async (req, res) => {
+    console.log("FocusFrameCanvas - Extension Loaded")
+    const body: any = req.body
+    setCaptureBoxActive(body.isActive)
+  })
+
+  useEffect(() => {
+    const ffsCanvas = new FocusFrameCanvasExtension()
+
+    if (isCaptureBoxActive) {
+      const captureBoxExits = document.querySelector(".capture-box")
+      if (!captureBoxExits) {
+        ffsCanvas.bootstrap()
+      }
+    }
+  }, [isCaptureBoxActive])
+
+  return <></>
+}
+
+export default QueryTextAnywhere
+
+// const ffsHandler = (isCaptureBoxActive: boolean) => {
+//   const focusFrameCanvasExtension = new FocusFrameCanvasExtension(isCaptureBoxActive)
+// }
