@@ -1,6 +1,6 @@
 import "@plasmohq/messaging"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useMessage } from "@plasmohq/messaging/hook"
 
@@ -8,48 +8,115 @@ const QueryTextAnywhere = () => {
   const [isCaptureBoxActive, setCaptureBoxActive] = useState<boolean>(true)
   useMessage<string, string>(async (req, res) => {
     console.log("FocusFrameCanvas - Plasmo Extension Loaded")
-    console.log("vvv")
 
     const body: any = req.body
     setCaptureBoxActive(body.isActive)
+    console.log("ffff", body)
 
-    ffsHandler(isCaptureBoxActive)
+    if (isCaptureBoxActive) {
+      const captureBoxExits = document.querySelector(".capture-box")
+
+      if (!captureBoxExits) {
+        new FocusFrameCanvasExtension(isCaptureBoxActive)
+      }
+    }
   })
-  return <> </>
+
+  return <></>
 }
 
 export default QueryTextAnywhere
 
-const ffsHandler = (isCaptureBoxActive: boolean) => {
-  let isMouseDown = false
-  const mouseDownCoords = { x: 0, y: 0 }
-  const getMainArticleSection = (): string => {
+// const ffsHandler = (isCaptureBoxActive: boolean) => {
+//   const focusFrameCanvasExtension = new FocusFrameCanvasExtension(isCaptureBoxActive)
+// }
+
+class FocusFrameCanvasExtension {
+  private isMouseDown = false
+  private mouseDownCoords = { x: 0, y: 0 }
+  private overLayHeight: string
+  private overlayElement: HTMLElement
+  private captureBoxElement: HTMLElement
+  private captureBoxElementButton: HTMLElement
+
+  constructor(private readonly isCaptureBoxActive: boolean) {
+    this.overLayHeight = this.getMainArticleHeight()
+    this.overlayElement = this.createOverlayElement()
+    this.captureBoxElement = this.createCaptureBoxElement()
+    this.captureBoxElementButton = this.createCaptureBoxButtonElement()
+
+    document.body.appendChild(this.captureBoxElement)
+    this.captureBoxElement.appendChild(this.captureBoxElementButton)
+
+    // if (this.isCaptureBoxActive) {
+    //   this.captureBoxElement.style.display = "flex"
+    // } else {
+    //   this.captureBoxElement.style.display = "none"
+    // }
+
+    this.captureBoxElementButton.addEventListener("click", () => {
+      if (this.isCaptureBoxActive) {
+        this.captureBoxElement.style.height = `${this.overLayHeight}`
+        this.applyClipPath()
+      }
+    })
+
+    document.addEventListener("mousedown", (e) => {
+      if (this.isCaptureBoxActive) {
+        e.preventDefault()
+        this.isMouseDown = true
+        this.mouseDownCoords.x = e.pageX
+        this.mouseDownCoords.y = e.pageY
+      }
+    })
+
+    document.addEventListener("mouseup", (e) => {
+      if (this.isCaptureBoxActive) {
+        this.isMouseDown = false
+        document.body.appendChild(this.overlayElement)
+        this.applyClipPath()
+      }
+    })
+
+    document.addEventListener("mousemove", (e) => {
+      if (this.isCaptureBoxActive) {
+        if (this.isMouseDown) {
+          this.calculateCaptureBoxSize(this.mouseDownCoords, {
+            x: e.pageX,
+            y: e.pageY
+          })
+        }
+      }
+    })
+  }
+
+  getMainArticleHeight = (): string => {
     const mainElement = document.querySelector("main")
     const articleElement = document.querySelector("article")
+
     if (!mainElement && !articleElement)
       console.log("main or article not found")
+
     return getComputedStyle(articleElement || mainElement).getPropertyValue(
       "height"
     )
   }
 
-  const overLayHeight = getMainArticleSection()
-
-  const createOverlayElement = () => {
+  createOverlayElement = (): HTMLElement => {
     const overlay: HTMLElement = document.createElement("div")
     overlay.className = "overlay"
     overlay.style.position = "absolute"
     overlay.style.top = "0"
     overlay.style.left = "0"
     overlay.style.width = "100%"
-    overlay.style.height = `${overLayHeight}`
+    overlay.style.height = `${this.overLayHeight}`
     overlay.style.backgroundColor = "rgba(65, 65, 65, 0.79)"
     overlay.style.pointerEvents = "none"
     overlay.style.zIndex = "1000"
     return overlay
   }
 
-  const createCaptureBoxElement = () => {
+  createCaptureBoxElement = (): HTMLElement => {
     const captureBox: HTMLElement = document.createElement("div")
     captureBox.className = "capture-box"
     captureBox.style.position = "absolute"
@@ -57,13 +124,13 @@ const ffsHandler = (isCaptureBoxActive: boolean) => {
     captureBox.style.borderBottom = "3px solid #781e1e"
     captureBox.style.zIndex = "99999"
     captureBox.style.backgroundColor = "transparent"
-    captureBox.style.display = "none"
+    captureBox.style.display = "flex"
     captureBox.style.alignItems = "end"
     captureBox.style.justifyContent = "center"
     return captureBox
   }
 
-  const createCaptureBoxButtonElement = () => {
+  createCaptureBoxButtonElement = (): HTMLElement => {
     const captureBoxElementButton: HTMLElement = document.createElement("div")
     captureBoxElementButton.className = "capture-box-extend-btn"
     captureBoxElementButton.style.position = "relative"
@@ -77,83 +144,31 @@ const ffsHandler = (isCaptureBoxActive: boolean) => {
     return captureBoxElementButton
   }
 
-  const overlayElement = createOverlayElement()
-  const captureBoxElement = createCaptureBoxElement()
-  const captureBoxElementButton = createCaptureBoxButtonElement()
-
-  if (isCaptureBoxActive) {
-    captureBoxElement.style.display = "flex"
-  } else {
-    captureBoxElement.style.display = "none"
-  }
-  //
-  // .capture-box-extend-btn:hover {
-  //   transform: translateY(130%);
-  // }
-
-  captureBoxElement.appendChild(captureBoxElementButton)
-  document.body.appendChild(captureBoxElement)
-
-  captureBoxElementButton.addEventListener("click", function () {
-    if (isCaptureBoxActive) {
-      captureBoxElement.style.height = `${overLayHeight}`
-      applyClipPath()
-    }
-  })
-
-  document.addEventListener("mousedown", function handleMouseDown(e) {
-    if (isCaptureBoxActive) {
-      e.preventDefault()
-      isMouseDown = true
-      mouseDownCoords.x = e.pageX
-      mouseDownCoords.y = e.pageY
-    }
-  })
-
-  document.addEventListener("mouseup", function handleMouseUp(e) {
-    if (isCaptureBoxActive) {
-      isMouseDown = false
-      document.body.appendChild(overlayElement)
-      applyClipPath()
-    }
-  })
-
-  document.addEventListener("mousemove", function handleMouseMove(e) {
-    if (isCaptureBoxActive) {
-      if (isMouseDown) {
-        calculateCaptureBoxSize(mouseDownCoords, { x: e.pageX, y: e.pageY })
-      }
-    }
-  })
-
-  const calculateCaptureBoxSize = (
-    mouseDownCoords: any,
-    mouseUpCoords: any
-  ) => {
+  calculateCaptureBoxSize = (mouseDownCoords: any, mouseUpCoords: any) => {
     const width = Math.abs(mouseDownCoords.x - mouseUpCoords.x)
     const height = Math.abs(mouseDownCoords.y - mouseUpCoords.y)
 
-    captureBoxElement.style.width = `${width}px`
-    captureBoxElement.style.height = `${height}px`
-    captureBoxElement.style.left = `${mouseDownCoords.x}px`
-    captureBoxElement.style.top = `${mouseDownCoords.y}px`
+    this.captureBoxElement.style.width = `${width}px`
+    this.captureBoxElement.style.height = `${height}px`
+    this.captureBoxElement.style.left = `${mouseDownCoords.x}px`
+    this.captureBoxElement.style.top = `${mouseDownCoords.y}px`
   }
 
-  const applyClipPath = () => {
-    const rect = captureBoxElement.getBoundingClientRect()
+  applyClipPath = () => {
+    const rect = this.captureBoxElement.getBoundingClientRect()
 
     const clipPath = `polygon(
-  0% 0%,
-  100% 0%,
-  100% 100%,
-  0% 100%,
-  0% 0%,
-  ${rect.left}px ${window.scrollY + rect.top}px,
-  ${rect.left}px ${window.scrollY + rect.bottom}px,
-  ${rect.right}px ${window.scrollY + rect.bottom}px,
-  ${rect.right}px ${window.scrollY + rect.top}px,
-  ${rect.left}px ${window.scrollY + rect.top}px
-)`
-    overlayElement.style.clipPath = clipPath
+    0% 0%,
+    100% 0%,
+    100% 100%,
+    0% 100%,
+    0% 0%,
+    ${rect.left}px ${window.scrollY + rect.top}px,
+    ${rect.left}px ${window.scrollY + rect.bottom}px,
+    ${rect.right}px ${window.scrollY + rect.bottom}px,
+    ${rect.right}px ${window.scrollY + rect.top}px,
+    ${rect.left}px ${window.scrollY + rect.top}px
+  )`
+    this.overlayElement.style.clipPath = clipPath
   }
 }
