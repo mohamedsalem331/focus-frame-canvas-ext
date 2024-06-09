@@ -2,7 +2,7 @@
   "name": "focus-frame-canvas",
   "displayName": "Focus frame canvas",
   "version": "0.0.1",
-  "description": "FocusFrame allow users to read blogs, articles or any reading on a webpage with more focus, just  Draw a box around the text you want to read, and enjoy a clear, distraction-free dark view.",
+  "description": "FocusFrameCanvas improve your reading experience for any webpage by focusing on the text you want to read and enjoy a clear distraction-free Focus view.",
   "author": "Mohamed Salem",
   "scripts": {
     "dev": "plasmo dev",

@@ -7,7 +7,7 @@ import { useMessage } from "@plasmohq/messaging/hook"
 class FocusFrameCanvasExtension {
   private isMouseDown = false
   private mouseDownCoords = { x: 0, y: 0 }
-  private overLayHeight: string
+  private overLayHeight: number
   private overlayElement: HTMLElement
   captureBoxElement: HTMLElement
   private captureBoxElementButton: HTMLElement
@@ -28,8 +28,7 @@ class FocusFrameCanvasExtension {
     this.captureBoxElement.appendChild(this.captureBoxElementButton)
 
     this.captureBoxElementButton.addEventListener("click", () => {
-      console.log("this.overLayHeight", this.overLayHeight)
-      this.captureBoxElement.style.height = `${this.overLayHeight}`
+      this.captureBoxElement.style.height = `${this.overLayHeight - window.scrollY}px`
       this.applyClipPath()
     })
 
@@ -75,16 +74,17 @@ class FocusFrameCanvasExtension {
     }
   }
 
-  getMainArticleHeight = (): string => {
+  getMainArticleHeight = (): number => {
     const mainElement = document.querySelector("main")
     const articleElement = document.querySelector("article")
 
     if (!mainElement && !articleElement)
       console.log("main or article not found")
 
-    return getComputedStyle(articleElement || mainElement).getPropertyValue(
-      "height"
-    )
+    const height = getComputedStyle(
+      articleElement || mainElement
+    ).getPropertyValue("height")
+    return Number(height.replace("px", ""))
   }
 
   createOverlayElement = (): HTMLElement => {
@@ -94,8 +94,8 @@ class FocusFrameCanvasExtension {
     overlay.style.top = "0"
     overlay.style.left = "0"
     overlay.style.width = "100%"
-    overlay.style.height = `${this.overLayHeight}`
-    overlay.style.backgroundColor = "rgba(65, 65, 65, 0.79)"
+    overlay.style.height = `${this.overLayHeight}px`
+    overlay.style.backgroundColor = "rgba(70, 70, 70, 0.95)"
     overlay.style.pointerEvents = "none"
     overlay.style.zIndex = "1000"
     return overlay
@@ -177,31 +177,17 @@ class FocusFrameCanvasExtension {
   }
 }
 
-const QueryTextAnywhere = () => {
-  const [isCaptureBoxActive, setCaptureBoxActive] = useState<boolean>(false)
+const ffsCanvas = new FocusFrameCanvasExtension()
 
+const QueryTextAnywhere = () => {
   useMessage<string, string>(async (req, res) => {
     console.log("FocusFrameCanvas - Extension Loaded")
-    const body: any = req.body
-    setCaptureBoxActive(body.isActive)
-  })
-
-  useEffect(() => {
-    const ffsCanvas = new FocusFrameCanvasExtension()
-
-    if (isCaptureBoxActive) {
-      const captureBoxExits = document.querySelector(".capture-box")
-      if (!captureBoxExits) {
-        ffsCanvas.bootstrap()
-      }
+    const captureBoxExits = document.querySelector(".capture-box")
+    if (!captureBoxExits) {
+      ffsCanvas.bootstrap()
     }
-  }, [isCaptureBoxActive])
-
+  })
   return <></>
 }
 
 export default QueryTextAnywhere
-
-// const ffsHandler = (isCaptureBoxActive: boolean) => {
-//   const focusFrameCanvasExtension = new FocusFrameCanvasExtension(isCaptureBoxActive)
-// }
