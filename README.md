@@ -1,33 +1,22 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+<p align="center">
+  <img src="assets/logo.png" width="20%"/>
+</p>
 
-## Getting Started
+<br/>
 
-First, run the development server:
+<div align="center">
+<img src="assets/example1.gif" width="50%" height="50%"/>
+</div>
 
-```bash
-pnpm dev
-# or
-npm run dev
-```
+<br/>
+FocusFrameCanvas, the handy tool designed to enhance your online reading experience. Our innovative technology allows you to immerse yourself in any article or text by creating a distraction-free environment. Say goodbye to cluttered webpages and hello to focused reading.
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
+## 📖 Features
 
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
+- **Focus View**: Activate FocusFrameCanvas to highlight the text you're interested in, providing a clear and centered view that keeps your attention where it matters.
+- **Customizable**: Easily adjust the focus frame to suit your reading preferences, whether you're diving into long articles or skimming through quick posts.
+- **Compatibility**: Works seamlessly across various websites, ensuring your reading experience is consistently comfortable.
 
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
+## 🌐 Support
 
-## Making production build
-
-Run the following:
-
-```bash
-pnpm build
-# or
-npm run build
-```
-
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
-
-## Submit to the webstores
-
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!
+FocusFrameCanvas will become available in the browsers web extension stores SOON!
